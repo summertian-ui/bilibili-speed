@@ -1,182 +1,129 @@
 // ==UserScript==
 // @name         Bilibili 自定义倍速增强
 // @namespace    https://www.bilibili.com/
-// @version      3.0.0
-// @description  给 Bilibili 播放器增加 1.75x、2.5x、3.0x 等自定义倍速
+// @version      4.0.0
+// @description  B站增加1.75x 2.5x 3.0x倍速
 // @author       老大
-// @match        https://www.bilibili.com/video/*
-// @match        https://www.bilibili.com/list/*
-// @match        https://www.bilibili.com/bangumi/*
-// @match        https://www.bilibili.com/bangumi/play/*
-// @match        https://www.bilibili.com/festival/*
+// @match        *://*.bilibili.com/*
 // @grant        none
-// @run-at       document-start
+// @run-at       document-startå
 // ==/UserScript==
 
+
 (function () {
+
     'use strict';
 
-    console.log('[B站自定义倍速] 脚本已启动');
 
-    // ============================================================
-    // 配置
-    // ============================================================
+    console.log('[B站倍速] 启动');
+
 
     const CUSTOM_RATES = [
-        1.75,
-        2.5,
         3.0,
+        2.5,
+        1.75
     ];
 
-    const MENU_SELECTOR = '.bpx-player-ctrl-playbackrate-menu';
 
-    const ITEM_SELECTOR =
+    const MENU =
+        '.bpx-player-ctrl-playbackrate-menu';
+
+
+    const ITEM =
         '.bpx-player-ctrl-playbackrate-menu-item';
 
-    // B站原生倍速
-    const DEFAULT_RATES = [
-        2,
-        1.5,
-        1.25,
-        1,
-        0.75,
-        0.5
-    ];
 
-    // ============================================================
-    // 获取 Video
-    // ============================================================
 
-    function getVideo() {
+    function getVideo(){
 
-        return (
-            document.querySelector(
-                '.bpx-player-video-wrap video'
-            )
-            ||
-            document.querySelector('video')
-            ||
-            document.querySelector('bwp-video')
-        );
+        return document.querySelector(
+            '.bpx-player-video-wrap video'
+        )
+        ||
+        document.querySelector('video');
+
     }
 
-    // ============================================================
-    // 设置播放速度
-    // ============================================================
 
-    function setPlaybackRate(rate) {
 
-        const video = getVideo();
+    /**
+     * 设置速度
+     */
+    function setRate(rate){
 
-        if (!video) {
-            console.warn(
-                '[B站自定义倍速] 没有找到 video'
+        let video=getVideo();
+
+
+        if(!video){
+
+            console.log(
+                '[B站倍速] 未找到video'
             );
-            return false;
-        }
 
-        const value = Number(rate);
-
-        video.playbackRate = value;
-
-        console.log(
-            `[B站自定义倍速] 播放速度 → ${value}x`
-        );
-
-        updateActiveState(value);
-
-        return true;
-    }
-
-    // ============================================================
-    // 更新高亮
-    // ============================================================
-
-    function updateActiveState(rate) {
-
-        document
-            .querySelectorAll(ITEM_SELECTOR)
-            .forEach(item => {
-
-                const value =
-                    Number(item.dataset.value);
-
-                if (
-                    Math.abs(value - rate) < 0.001
-                ) {
-                    item.classList.add(
-                        'bpx-state-active'
-                    );
-                } else {
-                    item.classList.remove(
-                        'bpx-state-active'
-                    );
-                }
-            });
-    }
-
-    // ============================================================
-    // 创建菜单项
-    // ============================================================
-
-    function createRateItem(rate) {
-
-        const li =
-            document.createElement('li');
-
-        li.className =
-            'bpx-player-ctrl-playbackrate-menu-item';
-
-        li.dataset.value =
-            String(rate);
-
-        li.textContent =
-            `${rate.toFixed(
-                rate % 1 === 0 ? 1 : 2
-            )}x`;
-
-        // 自定义标记
-        li.dataset.customRate = 'true';
-
-        // 点击
-        li.addEventListener(
-            'click',
-            function (event) {
-
-                event.preventDefault();
-                event.stopPropagation();
-
-                setPlaybackRate(rate);
-            },
-            true
-        );
-
-        return li;
-    }
-
-    // ============================================================
-    // 注入菜单
-    // ============================================================
-
-    function injectMenu(menu) {
-
-    if (!menu) return;
-
-
-    CUSTOM_RATES.forEach(rate => {
-
-
-        // 已存在跳过
-        if (
-            menu.querySelector(
-                `[data-value="${rate}"]`
-            )
-        ) {
             return;
         }
 
 
-        const li =
+        video.playbackRate =
+            Number(rate);
+
+
+        console.log(
+            '[B站倍速]',
+            rate+'x'
+        );
+
+
+        updateActive(rate);
+
+    }
+
+
+
+
+    /**
+     * 高亮
+     */
+    function updateActive(rate){
+
+
+        document
+        .querySelectorAll(ITEM)
+        .forEach(el=>{
+
+
+            if(
+                Number(el.dataset.value)
+                ===
+                Number(rate)
+            ){
+
+                el.classList.add(
+                    'bpx-state-active'
+                );
+
+            }else{
+
+                el.classList.remove(
+                    'bpx-state-active'
+                );
+            }
+
+        });
+
+    }
+
+
+
+
+
+    /**
+     * 创建菜单
+     */
+    function createItem(rate){
+
+
+        let li =
             document.createElement('li');
 
 
@@ -188,227 +135,199 @@
             rate;
 
 
-        li.textContent =
-            `${rate}x`;
-
-
         li.dataset.customRate =
             'true';
 
 
-
-        li.addEventListener(
-            'click',
-            function(e){
-
-                e.stopPropagation();
-
-                const video =
-                    getVideo();
+        li.innerText =
+            rate+'x';
 
 
-                if(video){
 
-                    video.playbackRate =
-                        rate;
+        li.onclick=function(e){
 
+            e.stopPropagation();
 
-                    console.log(
-                        '[B站倍速]',
-                        rate
-                    );
+            setRate(rate);
 
-                }
+        };
 
 
-                // 高亮
-                menu
-                .querySelectorAll(
-                    ITEM_SELECTOR
-                )
-                .forEach(item=>{
-                    item.classList.remove(
-                        'bpx-state-active'
-                    );
-                });
+        return li;
 
-
-                li.classList.add(
-                    'bpx-state-active'
-                );
-
-
-            },
-            true
-        );
-
-
-        // 插入2x下面
-
-        const anchor =
-            menu.querySelector(
-                '[data-value="2"]'
-            );
-
-
-        if(anchor){
-
-            anchor.after(li);
-
-        }else{
-
-            menu.appendChild(li);
-
-        }
-
-
-    });
-
-
-}
-
-    // ============================================================
-    // 查找并处理所有菜单
-    // ============================================================
-
-    function scan() {
-
-        const menus =
-            document.querySelectorAll(
-                MENU_SELECTOR
-            );
-
-        if (!menus.length) {
-            return;
-        }
-
-        menus.forEach(menu => {
-
-            injectMenu(menu);
-
-        });
     }
 
-    // ============================================================
-    // MutationObserver
-    // ============================================================
 
-    let timer = null;
 
-    const observer =
-        new MutationObserver(() => {
 
-            if (timer) {
+
+    /**
+     * 注入
+     */
+    function inject(){
+
+
+        let menu =
+            document.querySelector(MENU);
+
+
+        if(!menu)
+            return;
+
+
+
+        CUSTOM_RATES.forEach(rate=>{
+
+
+            // 已存在
+            if(
+                menu.querySelector(
+                    `[data-value="${rate}"]`
+                )
+            ){
                 return;
             }
 
-            timer = setTimeout(() => {
 
-                timer = null;
 
-                scan();
+            let item =
+                createItem(rate);
 
-            }, 100);
+
+
+            /*
+             * 找插入位置
+             *
+             * 3.0
+             * 2.5
+             * 2.0
+             * 1.75
+             */
+
+
+            let nodes =
+                [...menu.children];
+
+
+            let insertBefore =
+                nodes.find(
+                    el =>
+                    Number(el.dataset.value)
+                    <
+                    rate
+                );
+
+
+
+            if(insertBefore){
+
+                menu.insertBefore(
+                    item,
+                    insertBefore
+                );
+
+            }else{
+
+                menu.appendChild(item);
+
+            }
+
+
         });
 
-    function startObserver() {
+    }
 
-        if (!document.documentElement) {
 
-            setTimeout(
-                startObserver,
-                100
-            );
 
-            return;
-        }
+
+
+    /**
+     * 监听DOM
+     */
+    const observer =
+        new MutationObserver(()=>{
+
+            inject();
+
+        });
+
+
+
+    function start(){
+
 
         observer.observe(
             document.documentElement,
             {
-                childList: true,
-                subtree: true
+                childList:true,
+                subtree:true
             }
         );
 
-        console.log(
-            '[B站自定义倍速] MutationObserver 已启动'
-        );
+
+        inject();
+
+
     }
 
-    // ============================================================
-    // 定时同步
-    //
-    // B站切换视频时可能直接替换 video 元素
-    // 所以每 500ms 检查一次
-    // ============================================================
 
-    let lastVideo = null;
 
-    setInterval(() => {
 
-        const video = getVideo();
+    /**
+     * 视频变化监听
+     */
+    let lastVideo=null;
 
-        if (!video) {
-            return;
-        }
 
-        // video 元素发生变化
-        if (video !== lastVideo) {
+    setInterval(()=>{
 
-            lastVideo = video;
+
+        let video=getVideo();
+
+
+        if(
+            video &&
+            video!==lastVideo
+        ){
+
+            lastVideo=video;
+
 
             console.log(
-                '[B站自定义倍速] 检测到新的 video'
+                '[B站倍速] 新视频'
             );
+
 
             setTimeout(
-                scan,
-                300
+                inject,
+                500
             );
+
         }
 
-        // 同步当前高亮
-        updateActiveState(
-            video.playbackRate
-        );
 
-    }, 500);
+    },1000);
 
-    // ============================================================
-    // 初始化
-    // ============================================================
 
-    function init() {
 
-        startObserver();
 
-        scan();
 
-        setTimeout(scan, 500);
-        setTimeout(scan, 1000);
-        setTimeout(scan, 2000);
-        setTimeout(scan, 3000);
+    if(
+        document.documentElement
+    ){
 
-        console.log(
-            '[B站自定义倍速] 初始化完成'
-        );
-    }
+        start();
 
-    if (
-        document.readyState ===
-        'loading'
-    ) {
+    }else{
 
-        document.addEventListener(
+
+        window.addEventListener(
             'DOMContentLoaded',
-            init
+            start
         );
 
-    } else {
-
-        init();
-
     }
+
+
 
 })();
